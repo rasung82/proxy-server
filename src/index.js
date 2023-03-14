@@ -1,41 +1,53 @@
 import express from "express";
-import { createProxyMiddleware, responseInterceptor } from "http-proxy-middleware";
 import NodeCache from 'node-cache';
+import { createProxyMiddleware, responseInterceptor } from "http-proxy-middleware";
 
 const app = express();
+
 const cache  = new NodeCache();
 
-const options = {
+/**
+ * Option for 'createProxyMiddleware'.
+ */
+const proxyOptions = {
   target: "http://vcsapi.skstoa.com",  // http://localhost:3000/vcs/api/main/TV00/2
   changeOrigin: true,
-  pathRewrite: {
-  },
+  xfwd: true,
   selfHandleResponse: true,
-  onProxyRes : responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
+  onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
     const response = responseBuffer.toString('utf8');
-    console.log(response.length);
+    cache.set(req.url, response);
     return responseBuffer;
-  })
-}
-
-const options2 = {
-  target: "http://vcsapi.skstoa.com",
-  changeOrigin: true,
-  onProxyRes: (proxyRes, req, res) => {
-    const url = req.url;
-    console.log('[A]:onProxyRes', req.url);
-    cache.set(url, proxyRes);
+  }),
+  onProxyReq : (proxyReq, req, res) => {
+    // Add any additional headers or modify the request as needed
+    // For example, you can add an authentication token to the headers
+    // proxyReq.setHeader('Authorization', `Bearer ${token}`);
   },
-  onProxReq: (proxyReq, req, res) => {
-    const url = req.url;
-    console.log('[B]:onProxReq', req.url);
-    const cachedResponse = cache.get(url);
-    if(cachedResponse) {
-      res.send(cachedResponse);
-      return;
-    }
-  }
+  onError: (err, req, res) => {
+    // Handle any errors that occur during the proxy request
+    console.error(`Proxy error: ${err}`);
+    res.status(500).send(`Proxy error: ${err}`);
+  },
 }
 
-app.use("/", createProxyMiddleware(options2));
+// Use the http-proxy-middleware with the options defined above
+const proxyMiddleware = createProxyMiddleware(proxyOptions);
+
+
+// Use the middleware for all requests
+app.use('/', (req, res) => {
+  // Check if the response is already cached
+  const key = req.originalUrl || req.url;
+  const value = cache.get(key);
+  if (value) {
+    // If the response is cached, return it immediately
+    console.log(`Returning cached response for ${key} size is ${value.length}`);
+    res.send(JSON.parse(value));
+  } else {
+    // If the response is not cached, proxy the request
+    proxyMiddleware(req, res);
+  }
+});
+
 app.listen(3000);
