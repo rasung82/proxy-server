@@ -1,7 +1,7 @@
 
 import { createProxyMiddleware, responseInterceptor } from "http-proxy-middleware";
 
-class ProxyMiddeware {
+class InterfaceProxyMiddeware {
 
   /**
    * 생성자
@@ -66,4 +66,4 @@ class ProxyMiddeware {
 
 }
 
-export default ProxyMiddeware;
+export default InterfaceProxyMiddeware;

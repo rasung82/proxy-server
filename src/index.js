@@ -1,5 +1,6 @@
 import ProxyCache from "./model/ProxyCache.js";
-import ProxyMiddeware from "./services/ProxyMiddleware.js";
+import InterfaceProxyMiddeware from "./services/InterfaceProxyMiddeware.js";
+import ImageProxyMiddeware from "./services/ImageProxyMiddleware.js";
 
 import express from "express";
 
@@ -19,7 +20,7 @@ proxyCache.connect();
  * 미들웨어 모듈을 생성 후 초기화한다.
   FIXME: Please update your H/E server address and path.
  */
-const adminMiddleware = new ProxyMiddeware(
+const adminMiddleware = new InterfaceProxyMiddeware(
   app, 
   proxyCache, 
   '/vcs' , 
@@ -27,13 +28,33 @@ const adminMiddleware = new ProxyMiddeware(
 adminMiddleware.create();
 adminMiddleware.listen();
 
-const boMiddleware = new ProxyMiddeware(
+const boMiddleware = new InterfaceProxyMiddeware(
   app, 
   proxyCache, 
   '/cloud' , 
   'https://cloudapi.skstoa.com:8443');
 boMiddleware.create();
 boMiddleware.listen();
+
+// http://localhost:3000/upload/banner/lnb/230228155750036q45hMs.png
+const adminImageMiddleware = new ImageProxyMiddeware(
+  app, 
+  proxyCache, 
+  '/upload' , 
+  'http://vcsrsrc.skstoa.com');
+adminImageMiddleware.create();
+adminImageMiddleware.listen();
+
+
+const boImageMiddleware = new ImageProxyMiddeware(
+  app, 
+  proxyCache, 
+  '/goods' , 
+  'http://imagecdn.skstoa.com');
+boImageMiddleware.create();
+boImageMiddleware.listen();
+
+
 
 
 app.listen(3000);
