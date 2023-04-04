@@ -57,7 +57,7 @@ boImageMiddleware.listen();
 const mmImageMiddleware = new ImageProxyMiddeware(
   app, 
   proxyCache, 
-  '/images' , 
+  '/image' , 
   'http://39.124.244.135');
 boImageMiddleware.create();
 boImageMiddleware.listen();
